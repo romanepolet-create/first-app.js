@@ -1,5 +1,7 @@
 const hubspot = require('@hubspot/api-client');
 
+// This tells the script to look at Render's "Secret Vault" instead of the text
+const HUBSPOT_TOKEN = process.env.HUBSPOT_KEY;
 const hubspotClient = new hubspot.Client({ accessToken: HUBSPOT_TOKEN });
 
 // IDs récupérés de tes captures d'écran
