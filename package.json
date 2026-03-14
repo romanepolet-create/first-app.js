@@ -1,0 +1,8 @@
+{
+  "name": "hubspot-sentinel",
+  "version": "1.0.0",
+  "main": "server.js",
+  "dependencies": {
+    "@hubspot/api-client": "^11.0.0"
+  }
+}
