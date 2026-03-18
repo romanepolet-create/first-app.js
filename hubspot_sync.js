@@ -22,7 +22,12 @@ async function start() {
 
         for (const type of types) {
             console.log(`\n--- Analyse des ${type} ---`);
-            const response = await hubspotClient.crm[type].basicApi.getPage(20);
+            // On crée une requête de recherche pour trier par les fiches les plus récemment modifiées
+const searchRequest = {
+    sorts: [{ propertyName: 'hs_lastmodifieddate', direction: 'DESCENDING' }],
+    limit: 20
+};
+const response = await hubspotClient.crm[type].searchApi.doSearch(searchRequest);
             
             for (const obj of response.results) {
 		await sleep(150); // Pause de 150 millisecondes pour ne pas froisser HubSpot
