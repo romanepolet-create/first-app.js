@@ -3,6 +3,11 @@ const hubspot = require('@hubspot/api-client');
 // This tells the script to look at Render's "Secret Vault" instead of the text
 const HUBSPOT_TOKEN = process.env.HUBSPOT_TOKEN;
 const hubspotClient = new hubspot.Client({ accessToken: HUBSPOT_TOKEN });
+if (!HUBSPOT_TOKEN) {
+    console.error("❌ ERREUR : Ton PC ne trouve pas la variable d'environnement HUBSPOT_TOKEN.");
+    console.error("Tape cette commande avant de lancer le script : $env:HUBSPOT_TOKEN='ton_token_ici'");
+    process.exit(1);
+}
 
 // IDs récupérés de tes captures d'écran
 const MAP = {
@@ -56,7 +61,7 @@ const response = await hubspotClient.crm[type].searchApi.doSearch(searchRequest)
                                             types: [{ associationCategory: "HUBSPOT_DEFINED", associationTypeId: MAP.TO_NOTE[targetType] }]
                                         }]
                                     });
-                                    console.log(`   ✨ Note ${note.toObjectId} synchronisée vers ${targetType} ${linkedObj.toObjectId}`);
+                                    console.log(` ✨ Note ${note.toObjectId} synchronisée vers ${targetType} ${linkedObj.toObjectId}`);
                                 } catch (e) {
                                     // Déjà lié, on ignore proprement
                                 }
@@ -67,20 +72,18 @@ const response = await hubspotClient.crm[type].searchApi.doSearch(searchRequest)
             }
         }
         console.log("\n=== TERMINÉ : TOUTES LES FICHES SONT À JOUR ===");
-    } catch (err) {
-        catch (error) {
-    if (error.message.includes('429')) {
-        console.error(`\n🚦 Limite de vitesse HubSpot (429). Pause de 10s...`);
-        await sleep(10000);
-    } else {
-        console.error("\n❌ LA VRAIE ERREUR EST :", error.message);
-        process.exit(1); 
+    } catch (error) {
+        if (error.message && error.message.includes('429')) {
+            console.error(`\n🚦 Limite de vitesse HubSpot (429). Pause de 10s...`);
+            await sleep(10000);
+        } else {
+            console.error("\n❌ LA VRAIE ERREUR EST :", error.message);
+            process.exit(1); 
+        }
     }
-}
 }
 
 // Lance le cycle automatique
 console.log("=== MODE SENTINELLE ACTIVÉ (Scan toutes les 20s) ===");
 setInterval(start, 20000);
 start();
-
