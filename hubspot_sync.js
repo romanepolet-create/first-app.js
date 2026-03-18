@@ -36,7 +36,7 @@ const searchRequest = {
 			operator: 'GTE',
 			value: sinceTimestamp.toString()
 		}]
-	]},
+	}],
 	limit: 50
 };
 
