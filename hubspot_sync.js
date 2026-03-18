@@ -68,8 +68,15 @@ const response = await hubspotClient.crm[type].searchApi.doSearch(searchRequest)
         }
         console.log("\n=== TERMINÉ : TOUTES LES FICHES SONT À JOUR ===");
     } catch (err) {
-        console.error("❌ ERREUR : " + err.message);
+        catch (error) {
+    if (error.message.includes('429')) {
+        console.error(`\n🚦 Limite de vitesse HubSpot (429). Pause de 10s...`);
+        await sleep(10000);
+    } else {
+        console.error("\n❌ LA VRAIE ERREUR EST :", error.message);
+        process.exit(1); 
     }
+}
 }
 
 // Lance le cycle automatique
