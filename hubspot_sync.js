@@ -21,7 +21,8 @@ const MAP = {
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function start() {
-    console.log("=== DÉMARRAGE DE LA SYNCHRO GLOBALE ===");
+	const sinceTimestamp = Date.now() - (2 * 60 * 1000); //2min en millisec
+	console.log(`--- Scan des modifs depuis : ${new Date(sinceTimestamp).toLocaleTimeString()}---`);
     try {
         const types = ['contacts', 'companies', 'deals'];
 
@@ -29,13 +30,25 @@ async function start() {
             console.log(`\n--- Analyse des ${type} ---`);
             // On crée une requête de recherche pour trier par les fiches les plus récemment modifiées
 const searchRequest = {
-    sorts: [{ propertyName: 'hs_lastmodifieddate', direction: 'DESCENDING' }],
-    limit: 20
+	filterGroups: [{
+		filters: [{
+			propertyName: 'hs_lastmodifieddate',
+			operator: 'GTE',
+			value: sinceTimestamp.toString()
+		}]
+	]},
+	limit: 50
 };
+
 const response = await hubspotClient.crm[type].searchApi.doSearch(searchRequest);
-            
+
+if (!response.results || response.results.length === 0) {
+                console.log(`   > Rien de neuf pour ${type}.`);
+                continue;
+}
+		
             for (const obj of response.results) {
-		await sleep(150); // Pause de 150 millisecondes pour ne pas froisser HubSpot
+		await sleep(250); // Délai de sécurité
                 // 1. On cherche les notes présentes sur cette fiche
                 const noteAssocs = await hubspotClient.crm.associations.v4.basicApi.getPage(type, obj.id, 'notes');
                 
@@ -48,12 +61,10 @@ const response = await hubspotClient.crm[type].searchApi.doSearch(searchRequest)
                             if (targetType === type) continue; // Pas besoin de copier sur soi-même
 
                             // On utilise les IDs de tes captures pour trouver les fiches liées
-                            await sleep(200);
 							const linkedObjs = await hubspotClient.crm.associations.v4.basicApi.getPage(type, obj.id, targetType);
                             
                             for (const linkedObj of linkedObjs.results) {
                                 try {
-									await sleep(200);
                                     await hubspotClient.crm.associations.v4.batchApi.create('notes', targetType, {
                                         inputs: [{
                                             _from: { id: note.toObjectId },
@@ -61,17 +72,15 @@ const response = await hubspotClient.crm[type].searchApi.doSearch(searchRequest)
                                             types: [{ associationCategory: "HUBSPOT_DEFINED", associationTypeId: MAP.TO_NOTE[targetType] }]
                                         }]
                                     });
-                                    console.log(` ✨ Note ${note.toObjectId} synchronisée vers ${targetType} ${linkedObj.toObjectId}`);
-                                } catch (e) {
-                                    // Déjà lié, on ignore proprement
-                                }
+                                    console.log(` ✨ Note ${note.toObjectId} synchronisée vers ${targetType}`);
+                                } catch (e) {/*Déjà lié, on ignore proprement*/}
                             }
                         }
                     }
                 }
             }
         }
-        console.log("\n=== TERMINÉ : TOUTES LES FICHES SONT À JOUR ===");
+        console.log("\n=== CYCLE DE SCAN TERMINE ===");
     } catch (error) {
         if (error.message && error.message.includes('429')) {
             console.error(`\n🚦 Limite de vitesse HubSpot (429). Pause de 10s...`);
@@ -84,6 +93,6 @@ const response = await hubspotClient.crm[type].searchApi.doSearch(searchRequest)
 }
 
 // Lance le cycle automatique
-console.log("=== MODE SENTINELLE ACTIVÉ (Scan toutes les 20s) ===");
-setInterval(start, 20000);
+console.log("=== MODE SENTINELLE ACTIVÉ ECO (Scan toutes les 2min) ===");
+setInterval(start, 120000);
 start();
