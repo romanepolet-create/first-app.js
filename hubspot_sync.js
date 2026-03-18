@@ -43,10 +43,12 @@ const response = await hubspotClient.crm[type].searchApi.doSearch(searchRequest)
                             if (targetType === type) continue; // Pas besoin de copier sur soi-même
 
                             // On utilise les IDs de tes captures pour trouver les fiches liées
-                            const linkedObjs = await hubspotClient.crm.associations.v4.basicApi.getPage(type, obj.id, targetType);
+                            await sleep(200);
+							const linkedObjs = await hubspotClient.crm.associations.v4.basicApi.getPage(type, obj.id, targetType);
                             
                             for (const linkedObj of linkedObjs.results) {
                                 try {
+									await sleep(200);
                                     await hubspotClient.crm.associations.v4.batchApi.create('notes', targetType, {
                                         inputs: [{
                                             _from: { id: note.toObjectId },
