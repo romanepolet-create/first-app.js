@@ -8,6 +8,8 @@ if (!HUBSPOT_TOKEN) {
     console.error("Tape cette commande avant de lancer le script : $env:HUBSPOT_TOKEN='ton_token_ici'");
     process.exit(1);
 }
+// Affiche les 10 premiers caractères du token pour vérifier qu'il est bien lu sans le dévoiler en entier
+console.log(`🔑 Token chargé : ${HUBSPOT_TOKEN.substring(0, 10)}...`);
 
 // IDs récupérés de tes captures d'écran
 const MAP = {
