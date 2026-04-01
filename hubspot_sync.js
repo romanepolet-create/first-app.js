@@ -11,7 +11,6 @@ console.log(`🔑 Token détecté ! Début du token : ${HUBSPOT_TOKEN.substring(
 
 const hubspotClient = new hubspot.Client({ accessToken: HUBSPOT_TOKEN });
 
-}
 // Affiche les 10 premiers caractères du token pour vérifier qu'il est bien lu sans le dévoiler en entier
 console.log(`🔑 Token chargé : ${HUBSPOT_TOKEN.substring(0, 10)}...`);
 
@@ -60,7 +59,7 @@ if (type === 'deals') {
 		operator: 'EQ',
 		value: 'default'
 	});
-+
+};
 
 const response = await hubspotClient.crm[type].searchApi.doSearch(searchRequest);
 
