@@ -4,7 +4,7 @@ const hubspot = require('@hubspot/api-client');
 const HUBSPOT_TOKEN = process.env.HUBSPOT_TOKEN;
 if (!HUBSPOT_TOKEN) {
     console.error("❌ ERREUR : La variable d'environnement HUBSPOT_TOKEN est introuvable.");
-    process.exit(1);
+    process.exit(1); 
 }
 // 3. On affiche la preuve dans les logs Render
 console.log(`🔑 Token détecté ! Début du token : ${HUBSPOT_TOKEN.substring(0, 10)}...`);
