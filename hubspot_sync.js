@@ -40,6 +40,22 @@ const searchRequest = {
 	limit: 50
 };
 
+if (type === 'companies') {
+	searchRequest.filterGroups[0].filters.push({
+		propertyName: 'verticale',
+		operator: 'NEQ',
+		value: 'GMS'
+	});
+}
+
+if (type === 'deals') {
+	searchRequest.filterGroups[0].filters.push({
+		propertyName: 'pipeline',
+		operator: 'EQ',
+		value: 'default'
+	});
++
+
 const response = await hubspotClient.crm[type].searchApi.doSearch(searchRequest);
 
 if (!response.results || response.results.length === 0) {
