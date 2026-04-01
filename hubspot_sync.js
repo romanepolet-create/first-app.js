@@ -2,11 +2,15 @@ const hubspot = require('@hubspot/api-client');
 
 // This tells the script to look at Render's "Secret Vault" instead of the text
 const HUBSPOT_TOKEN = process.env.HUBSPOT_TOKEN;
-const hubspotClient = new hubspot.Client({ accessToken: HUBSPOT_TOKEN });
 if (!HUBSPOT_TOKEN) {
-    console.error("❌ ERREUR : Ton PC ne trouve pas la variable d'environnement HUBSPOT_TOKEN.");
-    console.error("Tape cette commande avant de lancer le script : $env:HUBSPOT_TOKEN='ton_token_ici'");
+    console.error("❌ ERREUR : La variable d'environnement HUBSPOT_TOKEN est introuvable.");
     process.exit(1);
+}
+// 3. On affiche la preuve dans les logs Render
+console.log(`🔑 Token détecté ! Début du token : ${HUBSPOT_TOKEN.substring(0, 10)}...`);
+
+const hubspotClient = new hubspot.Client({ accessToken: HUBSPOT_TOKEN });
+
 }
 // Affiche les 10 premiers caractères du token pour vérifier qu'il est bien lu sans le dévoiler en entier
 console.log(`🔑 Token chargé : ${HUBSPOT_TOKEN.substring(0, 10)}...`);
