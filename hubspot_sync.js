@@ -70,7 +70,29 @@ if (!response.results || response.results.length === 0) {
 		
             for (const obj of response.results) {
 		await sleep(250); // Délai de sécurité
-                // 1. On cherche les notes présentes sur cette fiche
+
+				// 🛑 LE RADAR ANTI-LEVÉE DE FONDS (Pour Contacts et Entreprises)
+    if (type === 'contacts' || type === 'companies') {
+        try {
+            // On regarde si la fiche a des deals associés
+            const dealsLinked = await hubspotClient.crm.associations.v4.basicApi.getPage(type, obj.id, 'deals');
+            if (dealsLinked.results.length > 0) {
+                // On récupère les propriétés de ces deals en une seule requête rapide
+                const dealIds = dealsLinked.results.map(d => ({ id: String(d.toObjectId) }));
+                const dealsData = await hubspotClient.crm.deals.batchApi.read({ inputs: dealIds, properties: ['pipeline'] });
+                
+                // On vérifie si au moins un des deals est dans la pipeline Levée de fonds (2510979314)
+                const isForbidden = dealsData.results.some(d => d.properties.pipeline === '2510979314');
+                if (isForbidden) {
+                    console.log(`   > 🚫 Fiche ${type} ${obj.id} ignorée (associée à Levée de fonds).`);
+                    continue; // On passe directement à la fiche suivante
+                }
+            }
+        } catch (e) {
+            console.error(`⚠️ Impossible de vérifier la pipeline des deals pour ${type} ${obj.id}`);
+        }
+    }	
+                // 1. On cherche les notes présentes sur les fiches non ignorées
                 const noteAssocs = await hubspotClient.crm.associations.v4.basicApi.getPage(type, obj.id, 'notes');
                 
                 if (noteAssocs.results.length > 0) {
