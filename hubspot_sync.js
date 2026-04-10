@@ -31,6 +31,7 @@ const FORBIDDEN_WORDS = [
 	'ouverture du capital',
 	'levée de fonds',
 	'last push invest'
+	'Last Push Invst'
 ];
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
