@@ -23,6 +23,16 @@ const MAP = {
         deals: { contacts: 3, companies: 341 } //
     }
 };
+
+const FORBIDDEN_PIPELINE_ID = '2510979314',
+const FORBIDDEN_WORDS = [
+	'invest',
+	'investissement',
+	'ouverture du capital',
+	'levée de fonds',
+	'last push invest'
+];
+
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function start() {
@@ -82,7 +92,7 @@ if (!response.results || response.results.length === 0) {
                 const dealsData = await hubspotClient.crm.deals.batchApi.read({ inputs: dealIds, properties: ['pipeline'] });
                 
                 // On vérifie si au moins un des deals est dans la pipeline Levée de fonds (2510979314)
-                const isForbidden = dealsData.results.some(d => d.properties.pipeline === '2510979314');
+                const isForbidden = dealsData.results.some(d => d.properties.pipeline === FORBIDDEN_PIPELINE_ID);
                 if (isForbidden) {
                     console.log(`   > 🚫 Fiche ${type} ${obj.id} ignorée (associée à Levée de fonds).`);
                     continue; // On passe directement à la fiche suivante
@@ -92,36 +102,56 @@ if (!response.results || response.results.length === 0) {
             console.error(`⚠️ Impossible de vérifier la pipeline des deals pour ${type} ${obj.id}`);
         }
     }	
-                // 1. On cherche les notes présentes sur les fiches non ignorées
-                const noteAssocs = await hubspotClient.crm.associations.v4.basicApi.getPage(type, obj.id, 'notes');
+    // 1. On cherche les notes présentes sur les fiches non ignorées
+    const noteAssocs = await hubspotClient.crm.associations.v4.basicApi.getPage(type, obj.id, 'notes');
                 
-                if (noteAssocs.results.length > 0) {
-                    console.log(`📍 Fiche ${type} ${obj.id} : ${noteAssocs.results.length} note(s) à vérifier.`);
+    if (noteAssocs.results.length > 0) {
+    console.log(`📍 Fiche ${type} ${obj.id} : ${noteAssocs.results.length} note(s) à vérifier.`);
 
-                    // 2. Pour chaque note, on cherche les autres fiches liées (Contacts, Entreprises ou Deals)
-                    for (const note of noteAssocs.results) {
-                        for (const targetType of types) {
-                            if (targetType === type) continue; // Pas besoin de copier sur soi-même
+	// 🤫 RADAR 2 : MOTS-CLÉS CONFIDENTIELS DANS LES NOTES
+    try {
+        const noteIds = noteAssocs.results.map(n => ({ id: String(n.toObjectId) }));
+        const notesData = await hubspotClient.crm.objects.notes.batchApi.read({ inputs: noteIds, properties: ['hs_note_body'] });
+        
+        // On vérifie si l'une des notes contient un mot interdit
+        const hasInvestmentNote = notesData.results.some(n => {
+            if (!n.properties.hs_note_body) return false;
+            const body = n.properties.hs_note_body.toLowerCase(); 
+            return FORBIDDEN_WORDS.some(word => body.includes(word));
+        });
 
-                            // On utilise les IDs de tes captures pour trouver les fiches liées
-							const linkedObjs = await hubspotClient.crm.associations.v4.basicApi.getPage(type, obj.id, targetType);
+        if (hasInvestmentNote) {
+            console.log(`   > 🤫 Fiche ${type} ${obj.id} ignorée (Contient des notes d'investissement).`);
+            continue; // On passe à la fiche suivante sans synchroniser les notes
+        }
+    } catch (e) {
+        console.error(`⚠️ Impossible de lire le contenu des notes pour ${type} ${obj.id}`);
+    }
+
+    // 2. Pour chaque note, on cherche les autres fiches liées (Contacts, Entreprises ou Deals)
+    for (const note of noteAssocs.results) {
+    	for (const targetType of types) {
+        	if (targetType === type) continue; // Pas besoin de copier sur soi-même
+
+    // On utilise les IDs de tes captures pour trouver les fiches liées
+			const linkedObjs = await hubspotClient.crm.associations.v4.basicApi.getPage(type, obj.id, targetType);
                             
-                            for (const linkedObj of linkedObjs.results) {
-                                try {
-                                    await hubspotClient.crm.associations.v4.batchApi.create('notes', targetType, {
-                                        inputs: [{
-                                            _from: { id: note.toObjectId },
-                                            to: { id: linkedObj.toObjectId },
-                                            types: [{ associationCategory: "HUBSPOT_DEFINED", associationTypeId: MAP.TO_NOTE[targetType] }]
-                                        }]
-                                    });
-                                    console.log(` ✨ Note ${note.toObjectId} synchronisée vers ${targetType}`);
-                                } catch (e) {/*Déjà lié, on ignore proprement*/}
-                            }
-                        }
-                    }
-                }
+            for (const linkedObj of linkedObjs.results) {
+            	try {
+                	await hubspotClient.crm.associations.v4.batchApi.create('notes', targetType, {
+                    	inputs: [{
+                        	_from: { id: note.toObjectId },
+                            to: { id: linkedObj.toObjectId },
+                            types: [{ associationCategory: "HUBSPOT_DEFINED", associationTypeId: MAP.TO_NOTE[targetType] }]
+                        }]
+                    });
+                    console.log(` ✨ Note ${note.toObjectId} synchronisée vers ${targetType}`);
+                } catch (e) {/*Déjà lié, on ignore proprement*/}
             }
+        }
+    }
+}
+			}
         }
         console.log("\n=== CYCLE DE SCAN TERMINE ===");
     } catch (error) {
