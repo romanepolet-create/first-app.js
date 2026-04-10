@@ -24,7 +24,7 @@ const MAP = {
     }
 };
 
-const FORBIDDEN_PIPELINE_ID = '2510979314',
+const FORBIDDEN_PIPELINE_ID = '2510979314';
 const FORBIDDEN_WORDS = [
 	'invest',
 	'investissement',
