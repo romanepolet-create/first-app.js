@@ -30,7 +30,7 @@ const FORBIDDEN_WORDS = [
 	'investissement',
 	'ouverture du capital',
 	'levée de fonds',
-	'last push invest'
+	'last push invest',
 	'Last Push Invst'
 ];
 
