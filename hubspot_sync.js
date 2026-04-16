@@ -62,6 +62,11 @@ if (type === 'companies') {
 		operator: 'NEQ',
 		value: 'GMS'
 	});
+	searchRequest.filterGroups[0].filters.push({
+		propertyName: 'verticale',
+		operator: 'NEQ',
+		value: 'Disributeur'
+	});
 }
 
 if (type === 'deals') {
