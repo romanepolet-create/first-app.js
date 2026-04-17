@@ -56,6 +56,15 @@ const searchRequest = {
 	limit: 50
 };
 
+// 🎯 Filtre : PAS de Contacts Commerciaux
+if (type === 'contacts') {
+	searchRequest.filterGroups[0].filters.push({
+    	propertyName: 'est_commercial',
+        operator: 'NEQ',
+        value: 'OUI' 
+    });
+}
+
 if (type === 'companies') {
 	searchRequest.filterGroups[0].filters.push({
 		propertyName: 'verticale',
