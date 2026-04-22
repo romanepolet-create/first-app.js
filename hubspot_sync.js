@@ -152,7 +152,25 @@ if (!response.results || response.results.length === 0) {
 			const linkedObjs = await hubspotClient.crm.associations.v4.basicApi.getPage(type, obj.id, targetType);
                             
             for (const linkedObj of linkedObjs.results) {
+				let isForbiddenTarget = false;
             	try {
+					if(targetType === 'companies') {
+						const comp = await hubspotClient.crm.companies.basicApi.getById(linkedObj.toObjectId, ['verticale']);
+                        if (comp.properties.verticale === 'Distributeur' || comp.properties.verticale === 'GMS') {
+                            isForbiddenTarget = true;
+						}
+					} else if ((targetType === 'contacts') {
+						const cont = await hubspotClient.crm.contacts.basicApi.getById(linkedObj.toObjectId, ['est_commercial']);
+                        if (cont.properties.est_commercial === 'OUI') {
+                            isForbiddenTarget = true;
+						}
+					}
+				} catch(e) {
+					if (isForbiddenTarget) {
+                    console.log(`   > 🛡️ Collage annulé : La cible ${targetType} ${linkedObj.toObjectId} est protégée (Distrib/GMS/Commercial).`);
+                    continue; // 🛑 ON BLOQUE LA COPIE ICI !
+                }
+				try {
                 	await hubspotClient.crm.associations.v4.batchApi.create('notes', targetType, {
                     	inputs: [{
                         	_from: { id: note.toObjectId },
