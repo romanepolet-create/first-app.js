@@ -74,7 +74,7 @@ if (type === 'companies') {
 	searchRequest.filterGroups[0].filters.push({
 		propertyName: 'verticale',
 		operator: 'NEQ',
-		value: 'Disributeur'
+		value: 'Distributeur'
 	});
 }
 
